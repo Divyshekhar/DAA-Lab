@@ -29,11 +29,23 @@ void minheapify(struct pair arr[], int N, int i) {
     }
 }
 
-void buildminHeap(struct pair arr[], int N) {
-    int startIdx = (N / 2) - 1;
-    for (int i = startIdx; i >= 0; i--) {
-        minheapify(arr, N, i);
+void insertMinHeap(struct pair arr[], int *N, struct pair newPair) {
+    arr[*N] = newPair;
+    int i = *N;
+    (*N)++;
+
+    while (i && arr[(i - 1) / 2].weight > arr[i].weight) {
+        swap(&arr[i], &arr[(i - 1) / 2]);
+        i = (i - 1) / 2;
     }
+}
+
+struct pair extractMin(struct pair arr[], int *N) {
+    struct pair min = arr[0];
+    arr[0] = arr[*N - 1];
+    (*N)--;
+    minheapify(arr, *N, 0);
+    return min;
 }
 
 int main() {
@@ -47,12 +59,10 @@ int main() {
     int out[n][n];
     int visited[n];
     
-    // Initialize visited array to 0
     for (int i = 0; i < n; i++) {
         visited[i] = 0;
     }
 
-    // Dynamically allocate the heap array with correct size
     struct pair *heap = (struct pair *)malloc(n * n * sizeof(struct pair));
 
     ptr = fopen("read.txt", "r");
@@ -64,7 +74,7 @@ int main() {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             fscanf(ptr, "%d", &ar[i][j]);
-            out[i][j] = 0; // Initialize output matrix to 0
+            out[i][j] = 0;
         }
     }
     fclose(ptr);
@@ -77,25 +87,23 @@ int main() {
         printf("\n");
     }
 
-    heap[c].child = 0;
-    heap[c].weight = 0;
-    heap[c].parent = -1;
-    c++;
+    int heapSize = 0;
+    struct pair start = { -1, 0, 0 };
+    insertMinHeap(heap, &heapSize, start);
     
     int sum = 0;
 
-    while (c > 0) {
-        c--; // Decrement c to point to the last element
-        int par = heap[c].parent;
-        int chi = heap[c].child;
-        int wt = heap[c].weight;
+    while (heapSize > 0) {
+        struct pair minEdge = extractMin(heap, &heapSize);
+        int par = minEdge.parent;
+        int chi = minEdge.child;
+        int wt = minEdge.weight;
 
-        if (visited[chi] == 1)
+        if (visited[chi])
             continue;
 
         visited[chi] = 1;
         sum += wt;
-        //ar[chi][par]=0;
         
         if (par != -1) {
             out[chi][par] = wt;
@@ -103,11 +111,8 @@ int main() {
 
         for (int i = 0; i < n; i++) {
             if (visited[i] != 1 && ar[chi][i] != 0) {
-                heap[c].child = i;
-                heap[c].parent = chi;
-                heap[c].weight = ar[chi][i];
-                c++;
-                buildminHeap(heap, c);
+                struct pair newEdge = { chi, i, ar[chi][i] };
+                insertMinHeap(heap, &heapSize, newEdge);
             }
         }
     }
@@ -126,4 +131,3 @@ int main() {
     
     return 0;
 }
-
